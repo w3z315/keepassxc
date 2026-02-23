@@ -913,6 +913,9 @@ void MainWindow::setKioskMode(bool enabled)
         // Hide status bar
         statusBar()->setVisible(false);
 
+        // Hide welcome screen action buttons (database is opened via CLI)
+        m_ui->welcomeWidget->setVisible(false);
+
         // Build a minimal right-click context menu (copy actions only)
         m_entryContextMenu->clear();
         m_entryContextMenu->addAction(m_ui->actionEntryCopyUsername);
