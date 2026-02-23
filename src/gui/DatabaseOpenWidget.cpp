@@ -86,6 +86,17 @@ DatabaseOpenWidget::DatabaseOpenWidget(QWidget* parent)
     connect(m_ui->buttonBox, SIGNAL(accepted()), SLOT(openDatabase()));
     connect(m_ui->buttonBox, SIGNAL(rejected()), SLOT(reject()));
 
+    // In kiosk mode, remove the Close button from the button box at construction time
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        m_ui->buttonBox->setStandardButtons(QDialogButtonBox::Ok);
+        auto kioskOkBtn = m_ui->buttonBox->button(QDialogButtonBox::Ok);
+        if (kioskOkBtn) {
+            kioskOkBtn->setText(tr("Unlock"));
+            kioskOkBtn->setDefault(true);
+        }
+        m_ui->resetQuickUnlockButton->setVisible(false);
+    }
+
     connect(m_ui->addKeyFileLinkLabel, &QLabel::linkActivated, this, &DatabaseOpenWidget::browseKeyFile);
     connect(m_ui->keyFileLineEdit, &PasswordWidget::textChanged, this, [&](const QString& text) {
         bool state = !text.isEmpty();
@@ -269,7 +280,7 @@ void DatabaseOpenWidget::load(const QString& filename)
     // Set the public name if defined
     auto label = tr("Unlock KeePassXC Database");
     if (getMainWindow() && getMainWindow()->isKioskMode()) {
-        label = tr("michler.io Passwort-Manager");
+        label = QStringLiteral("michler.io Passwort-Manager");
     }
     if (!m_db->publicName().isEmpty()) {
         label.append(QString(": %1").arg(m_db->publicName()));

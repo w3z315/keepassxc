@@ -22,6 +22,7 @@
 #include <QBoxLayout>
 #include <QCheckBox>
 #include <QDesktopServices>
+#include <QHeaderView>
 #include <QHostInfo>
 #include <QInputDialog>
 #include <QKeyEvent>
@@ -244,6 +245,11 @@ DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent)
     // from a newly created database
     KeeShare::instance()->connectDatabase(m_db, {});
 #endif
+
+    // In kiosk mode, show the Password column by default
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        m_entryView->header()->showSection(EntryModel::Password);
+    }
 
     if (m_db->isInitialized()) {
         switchToMainView();
