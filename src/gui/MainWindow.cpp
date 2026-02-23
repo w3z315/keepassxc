@@ -892,6 +892,34 @@ void MainWindow::openDatabase(const QString& filePath, const QString& password, 
     m_ui->tabWidget->addDatabaseTab(filePath, false, password, keyfile);
 }
 
+void MainWindow::setKioskMode(bool enabled)
+{
+    m_kioskMode = enabled;
+    if (m_kioskMode) {
+        // Hide menus and toolbar actions not relevant in kiosk mode
+        m_ui->menuEntries->setEnabled(false);
+        m_ui->menuGroups->setEnabled(false);
+        m_ui->actionDatabaseNew->setVisible(false);
+        m_ui->actionDatabaseSave->setVisible(false);
+        m_ui->actionDatabaseSaveAs->setVisible(false);
+        m_ui->actionDatabaseSaveBackup->setVisible(false);
+        m_ui->actionDatabaseMerge->setVisible(false);
+        m_ui->menuExport->setEnabled(false);
+        m_ui->menuRemoteSync->setEnabled(false);
+        m_ui->actionDatabaseSettings->setVisible(false);
+        m_ui->actionDatabaseSecurity->setVisible(false);
+        m_ui->actionEntryNew->setVisible(false);
+        m_ui->actionEntryEdit->setVisible(false);
+        m_ui->actionEntryDelete->setVisible(false);
+        updateWindowTitle();
+    }
+}
+
+bool MainWindow::isKioskMode() const
+{
+    return m_kioskMode;
+}
+
 void MainWindow::updateMenuActionState()
 {
     // MainWindow State
@@ -1060,6 +1088,45 @@ void MainWindow::updateMenuActionState()
 #endif
 
     m_searchWidgetAction->setEnabled(inDatabase);
+
+    // In kiosk mode, disable all modification actions
+    if (m_kioskMode) {
+        // Entry modifications
+        m_ui->actionEntryNew->setEnabled(false);
+        m_ui->actionEntryEdit->setEnabled(false);
+        m_ui->actionEntryDelete->setEnabled(false);
+        m_ui->actionEntryClone->setEnabled(false);
+        m_ui->actionEntryExpire->setEnabled(false);
+        m_ui->actionEntryMoveUp->setEnabled(false);
+        m_ui->actionEntryMoveDown->setEnabled(false);
+        m_ui->actionEntryRestore->setEnabled(false);
+        m_ui->actionEntrySetupTotp->setEnabled(false);
+        m_ui->actionEntryDownloadIcon->setEnabled(false);
+#ifdef WITH_XC_BROWSER_PASSKEYS
+        m_ui->actionEntryImportPasskey->setEnabled(false);
+        m_ui->actionEntryRemovePasskey->setEnabled(false);
+#endif
+
+        // Group modifications
+        m_ui->actionGroupNew->setEnabled(false);
+        m_ui->actionGroupEdit->setEnabled(false);
+        m_ui->actionGroupDelete->setEnabled(false);
+        m_ui->actionGroupClone->setEnabled(false);
+        m_ui->actionGroupSortAsc->setEnabled(false);
+        m_ui->actionGroupSortDesc->setEnabled(false);
+        m_ui->actionGroupEmptyRecycleBin->setEnabled(false);
+        m_ui->actionGroupDownloadFavicons->setEnabled(false);
+
+        // Database modifications
+        m_ui->actionDatabaseSave->setEnabled(false);
+        m_ui->actionDatabaseSaveAs->setEnabled(false);
+        m_ui->actionDatabaseSaveBackup->setEnabled(false);
+        m_ui->actionDatabaseSettings->setEnabled(false);
+        m_ui->actionDatabaseSecurity->setEnabled(false);
+        m_ui->actionDatabaseMerge->setEnabled(false);
+        m_ui->menuExport->setEnabled(false);
+        m_ui->menuRemoteSync->setEnabled(false);
+    }
 }
 
 void MainWindow::updateToolbarSeparatorVisibility()
@@ -1102,10 +1169,11 @@ void MainWindow::updateWindowTitle()
     }
 
     QString windowTitle;
+    QString baseTitle = m_kioskMode ? QStringLiteral("michler.io Passwort-Manager") : BaseWindowTitle;
     if (customWindowTitlePart.isEmpty()) {
-        windowTitle = QString("%1[*]").arg(BaseWindowTitle);
+        windowTitle = QString("%1[*]").arg(baseTitle);
     } else {
-        windowTitle = QString("%1[*] - %2").arg(customWindowTitlePart, BaseWindowTitle);
+        windowTitle = QString("%1[*] - %2").arg(customWindowTitlePart, baseTitle);
     }
 
     setWindowTitle(windowTitle);

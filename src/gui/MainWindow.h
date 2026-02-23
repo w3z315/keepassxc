@@ -54,6 +54,8 @@ public:
     QList<DatabaseWidget*> getOpenDatabases();
     void restoreConfigState();
     void setAllowScreenCapture(bool state);
+    void setKioskMode(bool enabled);
+    bool isKioskMode() const;
 
     enum StackedWidgetIndex
     {
@@ -200,6 +202,7 @@ private:
     bool m_contextMenuFocusLock = false;
     bool m_showToolbarSeparator = false;
     bool m_allowScreenCapture = false;
+    bool m_kioskMode = false;
     qint64 m_lastFocusOutTime = 0;
     qint64 m_lastShowTime = 0;
     QTimer m_updateCheckTimer;

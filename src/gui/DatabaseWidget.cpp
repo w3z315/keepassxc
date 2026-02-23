@@ -1288,6 +1288,11 @@ void DatabaseWidget::switchToEntryEdit(Entry* entry)
 
 void DatabaseWidget::switchToEntryEdit(Entry* entry, bool create)
 {
+    // Prevent editing in kiosk mode
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        return;
+    }
+
     // If creating an entry, it will be in `currentGroup()` so it's
     // okay to use but when editing, the entry may not be in
     // `currentGroup()` so we get the entry's group.
@@ -1309,6 +1314,11 @@ void DatabaseWidget::switchToEntryEdit(Entry* entry, bool create)
 
 void DatabaseWidget::switchToGroupEdit(Group* group, bool create)
 {
+    // Prevent editing in kiosk mode
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        return;
+    }
+
     m_editGroupWidget->loadGroup(group, create, m_db);
     setCurrentWidget(m_editGroupWidget);
 }
@@ -1546,17 +1556,19 @@ void DatabaseWidget::entryActivationSignalReceived(Entry* entry, EntryModel::Mod
         return;
     }
 
+    bool kioskMode = getMainWindow() && getMainWindow()->isKioskMode();
+
     // Implement 'copy-on-doubleclick' functionality for certain columns
     switch (column) {
     case EntryModel::Username:
-        if (config()->get(Config::Security_EnableCopyOnDoubleClick).toBool()) {
+        if (kioskMode || config()->get(Config::Security_EnableCopyOnDoubleClick).toBool()) {
             setClipboardTextAndMinimize(entry->resolveMultiplePlaceholders(entry->username()));
         } else {
             switchToEntryEdit(entry);
         }
         break;
     case EntryModel::Password:
-        if (config()->get(Config::Security_EnableCopyOnDoubleClick).toBool()) {
+        if (kioskMode || config()->get(Config::Security_EnableCopyOnDoubleClick).toBool()) {
             setClipboardTextAndMinimize(entry->resolveMultiplePlaceholders(entry->password()));
         } else {
             switchToEntryEdit(entry);
@@ -1565,7 +1577,7 @@ void DatabaseWidget::entryActivationSignalReceived(Entry* entry, EntryModel::Mod
     case EntryModel::Totp:
         if (entry->hasValidTotp()) {
             setClipboardTextAndMinimize(entry->totp());
-        } else {
+        } else if (!kioskMode) {
             setupTotp();
         }
         break;
