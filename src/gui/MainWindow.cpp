@@ -80,6 +80,7 @@
 #endif
 
 const QString MainWindow::BaseWindowTitle = "KeePassXC";
+const QString MainWindow::KioskWindowTitle = "michler.io Passwort-Manager";
 
 MainWindow* g_MainWindow = nullptr;
 MainWindow* getMainWindow()
@@ -892,6 +893,58 @@ void MainWindow::openDatabase(const QString& filePath, const QString& password, 
     m_ui->tabWidget->addDatabaseTab(filePath, false, password, keyfile);
 }
 
+void MainWindow::setKioskMode(bool enabled)
+{
+    m_kioskMode = enabled;
+    if (m_kioskMode) {
+        // Hide entire menu bar
+        m_ui->menubar->setVisible(false);
+
+        // Hide all toolbar actions except the search widget
+        for (auto* action : m_ui->toolBar->actions()) {
+            if (action != m_searchWidgetAction) {
+                action->setVisible(false);
+            }
+        }
+
+        // Hide the toolbar separator
+        m_ui->toolbarSeparator->setVisible(false);
+
+        // Hide status bar
+        statusBar()->setVisible(false);
+
+        // Hide warning/info banner (e.g. non-production build warning)
+        m_ui->globalMessageWidget->hideMessage();
+        m_ui->globalMessageWidget->setVisible(false);
+
+        // Hide welcome screen action buttons (database is opened via CLI)
+        m_ui->welcomeWidget->setVisible(false);
+
+        // Build a minimal right-click context menu (copy actions only)
+        m_entryContextMenu->clear();
+        m_entryContextMenu->addAction(m_ui->actionEntryCopyUsername);
+        m_entryContextMenu->addAction(m_ui->actionEntryCopyPassword);
+        m_entryContextMenu->addAction(m_ui->actionEntryCopyURL);
+        m_entryContextMenu->addAction(m_ui->menuEntryTotp->menuAction());
+        m_entryContextMenu->addSeparator();
+        m_entryContextMenu->addAction(m_ui->actionEntryOpenUrl);
+
+        // Disable the "new entry" right-click context menu
+        m_entryNewContextMenu->clear();
+
+        // Show passwords in kiosk mode (make them visible and copiable)
+        config()->set(Config::GUI_HidePasswords, false);
+        config()->set(Config::Security_HidePasswordPreviewPanel, false);
+
+        updateWindowTitle();
+    }
+}
+
+bool MainWindow::isKioskMode() const
+{
+    return m_kioskMode;
+}
+
 void MainWindow::updateMenuActionState()
 {
     // MainWindow State
@@ -1060,6 +1113,50 @@ void MainWindow::updateMenuActionState()
 #endif
 
     m_searchWidgetAction->setEnabled(inDatabase);
+
+    // In kiosk mode, disable all modification and management actions
+    // This also disables their keyboard shortcuts to prevent bypassing the UI restrictions
+    if (m_kioskMode) {
+        // Entry modifications
+        m_ui->actionEntryNew->setEnabled(false);
+        m_ui->actionEntryEdit->setEnabled(false);
+        m_ui->actionEntryDelete->setEnabled(false);
+        m_ui->actionEntryClone->setEnabled(false);
+        m_ui->actionEntryExpire->setEnabled(false);
+        m_ui->actionEntryMoveUp->setEnabled(false);
+        m_ui->actionEntryMoveDown->setEnabled(false);
+        m_ui->actionEntryRestore->setEnabled(false);
+        m_ui->actionEntrySetupTotp->setEnabled(false);
+        m_ui->actionEntryDownloadIcon->setEnabled(false);
+#ifdef WITH_XC_BROWSER_PASSKEYS
+        m_ui->actionEntryImportPasskey->setEnabled(false);
+        m_ui->actionEntryRemovePasskey->setEnabled(false);
+#endif
+
+        // Group modifications
+        m_ui->actionGroupNew->setEnabled(false);
+        m_ui->actionGroupEdit->setEnabled(false);
+        m_ui->actionGroupDelete->setEnabled(false);
+        m_ui->actionGroupClone->setEnabled(false);
+        m_ui->actionGroupSortAsc->setEnabled(false);
+        m_ui->actionGroupSortDesc->setEnabled(false);
+        m_ui->actionGroupEmptyRecycleBin->setEnabled(false);
+        m_ui->actionGroupDownloadFavicons->setEnabled(false);
+
+        // Database modifications and management
+        m_ui->actionDatabaseNew->setEnabled(false);
+        m_ui->actionDatabaseSave->setEnabled(false);
+        m_ui->actionDatabaseSaveAs->setEnabled(false);
+        m_ui->actionDatabaseSaveBackup->setEnabled(false);
+        m_ui->actionDatabaseSettings->setEnabled(false);
+        m_ui->actionDatabaseSecurity->setEnabled(false);
+        m_ui->actionDatabaseMerge->setEnabled(false);
+        m_ui->actionReports->setEnabled(false);
+        m_ui->menuExport->setEnabled(false);
+        m_ui->menuRemoteSync->setEnabled(false);
+        m_ui->actionSettings->setEnabled(false);
+        m_ui->actionPasswordGenerator->setEnabled(false);
+    }
 }
 
 void MainWindow::updateToolbarSeparatorVisibility()
@@ -1102,10 +1199,11 @@ void MainWindow::updateWindowTitle()
     }
 
     QString windowTitle;
+    QString baseTitle = m_kioskMode ? KioskWindowTitle : BaseWindowTitle;
     if (customWindowTitlePart.isEmpty()) {
-        windowTitle = QString("%1[*]").arg(BaseWindowTitle);
+        windowTitle = QString("%1[*]").arg(baseTitle);
     } else {
-        windowTitle = QString("%1[*] - %2").arg(customWindowTitlePart, BaseWindowTitle);
+        windowTitle = QString("%1[*] - %2").arg(customWindowTitlePart, baseTitle);
     }
 
     setWindowTitle(windowTitle);
@@ -1508,16 +1606,20 @@ bool MainWindow::focusNextPrevChild(bool next)
 void MainWindow::focusSearchWidget()
 {
     if (m_searchWidgetAction->isEnabled()) {
-        m_ui->toolBar->setVisible(true);
-        m_ui->toolBar->setExpanded(true);
+        if (!m_kioskMode) {
+            m_ui->toolBar->setVisible(true);
+            m_ui->toolBar->setExpanded(true);
+        }
         m_searchWidget->focusSearch();
     }
 }
 
 void MainWindow::enableMenuAndToolbar()
 {
-    m_ui->toolBar->setDisabled(false);
-    m_ui->menubar->setDisabled(false);
+    if (!m_kioskMode) {
+        m_ui->toolBar->setDisabled(false);
+        m_ui->menubar->setDisabled(false);
+    }
 }
 
 void MainWindow::disableMenuAndToolbar()
@@ -1680,14 +1782,16 @@ void MainWindow::showEntryContextMenu(const QPoint& globalPos)
 
     if (entrySelected) {
         m_entryContextMenu->popup(globalPos);
-    } else {
+    } else if (!m_kioskMode) {
         m_entryNewContextMenu->popup(globalPos);
     }
 }
 
 void MainWindow::showGroupContextMenu(const QPoint& globalPos)
 {
-    m_ui->menuGroups->popup(globalPos);
+    if (!m_kioskMode) {
+        m_ui->menuGroups->popup(globalPos);
+    }
 }
 
 void MainWindow::applySettingsChanges()

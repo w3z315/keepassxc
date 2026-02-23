@@ -20,7 +20,9 @@
 #include "DatabaseOpenWidget.h"
 #include "DatabaseTabWidget.h"
 #include "DatabaseWidget.h"
+#include "MainWindow.h"
 
+#include <QCloseEvent>
 #include <QFileInfo>
 #include <QLayout>
 #include <QShortcut>
@@ -37,6 +39,10 @@ DatabaseOpenDialog::DatabaseOpenDialog(QWidget* parent)
     setWindowTitle(tr("Unlock Database - KeePassXC"));
     setWindowFlags(Qt::Dialog);
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
+    // In kiosk mode, remove the window close button
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        setWindowFlag(Qt::WindowCloseButtonHint, false);
+    }
 #ifdef Q_OS_LINUX
     // Linux requires this to overcome some Desktop Environments (also no Quick Unlock)
     setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
@@ -237,6 +243,12 @@ void DatabaseOpenDialog::complete(bool accepted)
 
 void DatabaseOpenDialog::closeEvent(QCloseEvent* e)
 {
+    // Prevent closing in kiosk mode
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        e->ignore();
+        return;
+    }
+
     emit dialogFinished(false, m_currentDbWidget);
     clearForms();
     QDialog::closeEvent(e);

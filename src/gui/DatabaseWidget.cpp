@@ -22,6 +22,7 @@
 #include <QBoxLayout>
 #include <QCheckBox>
 #include <QDesktopServices>
+#include <QHeaderView>
 #include <QHostInfo>
 #include <QInputDialog>
 #include <QKeyEvent>
@@ -244,6 +245,11 @@ DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent)
     // from a newly created database
     KeeShare::instance()->connectDatabase(m_db, {});
 #endif
+
+    // In kiosk mode, show the Password column by default
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        m_entryView->header()->showSection(EntryModel::Password);
+    }
 
     if (m_db->isInitialized()) {
         switchToMainView();
@@ -1288,6 +1294,11 @@ void DatabaseWidget::switchToEntryEdit(Entry* entry)
 
 void DatabaseWidget::switchToEntryEdit(Entry* entry, bool create)
 {
+    // Prevent editing in kiosk mode
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        return;
+    }
+
     // If creating an entry, it will be in `currentGroup()` so it's
     // okay to use but when editing, the entry may not be in
     // `currentGroup()` so we get the entry's group.
@@ -1309,6 +1320,11 @@ void DatabaseWidget::switchToEntryEdit(Entry* entry, bool create)
 
 void DatabaseWidget::switchToGroupEdit(Group* group, bool create)
 {
+    // Prevent editing in kiosk mode
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        return;
+    }
+
     m_editGroupWidget->loadGroup(group, create, m_db);
     setCurrentWidget(m_editGroupWidget);
 }
@@ -1546,17 +1562,20 @@ void DatabaseWidget::entryActivationSignalReceived(Entry* entry, EntryModel::Mod
         return;
     }
 
+    bool kioskMode = getMainWindow() && getMainWindow()->isKioskMode();
+    bool copyOnDoubleClick = kioskMode || config()->get(Config::Security_EnableCopyOnDoubleClick).toBool();
+
     // Implement 'copy-on-doubleclick' functionality for certain columns
     switch (column) {
     case EntryModel::Username:
-        if (config()->get(Config::Security_EnableCopyOnDoubleClick).toBool()) {
+        if (copyOnDoubleClick) {
             setClipboardTextAndMinimize(entry->resolveMultiplePlaceholders(entry->username()));
         } else {
             switchToEntryEdit(entry);
         }
         break;
     case EntryModel::Password:
-        if (config()->get(Config::Security_EnableCopyOnDoubleClick).toBool()) {
+        if (copyOnDoubleClick) {
             setClipboardTextAndMinimize(entry->resolveMultiplePlaceholders(entry->password()));
         } else {
             switchToEntryEdit(entry);
@@ -1565,7 +1584,7 @@ void DatabaseWidget::entryActivationSignalReceived(Entry* entry, EntryModel::Mod
     case EntryModel::Totp:
         if (entry->hasValidTotp()) {
             setClipboardTextAndMinimize(entry->totp());
-        } else {
+        } else if (!kioskMode) {
             setupTotp();
         }
         break;
