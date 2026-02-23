@@ -913,6 +913,10 @@ void MainWindow::setKioskMode(bool enabled)
         // Hide status bar
         statusBar()->setVisible(false);
 
+        // Hide warning/info banner (e.g. non-production build warning)
+        m_ui->globalMessageWidget->hideMessage();
+        m_ui->globalMessageWidget->setVisible(false);
+
         // Hide welcome screen action buttons (database is opened via CLI)
         m_ui->welcomeWidget->setVisible(false);
 
