@@ -80,6 +80,7 @@
 #endif
 
 const QString MainWindow::BaseWindowTitle = "KeePassXC";
+const QString MainWindow::KioskWindowTitle = "michler.io Passwort-Manager";
 
 MainWindow* g_MainWindow = nullptr;
 MainWindow* getMainWindow()
@@ -1169,7 +1170,7 @@ void MainWindow::updateWindowTitle()
     }
 
     QString windowTitle;
-    QString baseTitle = m_kioskMode ? QStringLiteral("michler.io Passwort-Manager") : BaseWindowTitle;
+    QString baseTitle = m_kioskMode ? KioskWindowTitle : BaseWindowTitle;
     if (customWindowTitlePart.isEmpty()) {
         windowTitle = QString("%1[*]").arg(baseTitle);
     } else {

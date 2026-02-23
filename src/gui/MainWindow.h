@@ -160,6 +160,7 @@ private slots:
 
 private:
     static const QString BaseWindowTitle;
+    static const QString KioskWindowTitle;
 
     void saveWindowInformation();
     void restoreWindowInformation();

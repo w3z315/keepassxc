@@ -1557,18 +1557,19 @@ void DatabaseWidget::entryActivationSignalReceived(Entry* entry, EntryModel::Mod
     }
 
     bool kioskMode = getMainWindow() && getMainWindow()->isKioskMode();
+    bool copyOnDoubleClick = kioskMode || config()->get(Config::Security_EnableCopyOnDoubleClick).toBool();
 
     // Implement 'copy-on-doubleclick' functionality for certain columns
     switch (column) {
     case EntryModel::Username:
-        if (kioskMode || config()->get(Config::Security_EnableCopyOnDoubleClick).toBool()) {
+        if (copyOnDoubleClick) {
             setClipboardTextAndMinimize(entry->resolveMultiplePlaceholders(entry->username()));
         } else {
             switchToEntryEdit(entry);
         }
         break;
     case EntryModel::Password:
-        if (kioskMode || config()->get(Config::Security_EnableCopyOnDoubleClick).toBool()) {
+        if (copyOnDoubleClick) {
             setClipboardTextAndMinimize(entry->resolveMultiplePlaceholders(entry->password()));
         } else {
             switchToEntryEdit(entry);

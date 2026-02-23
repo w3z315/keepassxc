@@ -85,8 +85,7 @@ int main(int argc, char** argv)
     QCommandLineOption allowScreenCaptureOption("allow-screencapture",
                                                 QObject::tr("allow screenshots and app recording (Windows/macOS)"));
     QCommandLineOption startMinimized("minimized", QObject::tr("start minimized to the system tray"));
-    QCommandLineOption kioskOption("kiosk",
-                                   QObject::tr("start in kiosk mode (read-only, branded as michler.io)"));
+    QCommandLineOption kioskOption("kiosk", QObject::tr("start in kiosk mode (read-only, branded as michler.io)"));
 
     QCommandLineOption helpOption = parser.addHelpOption();
     QCommandLineOption versionOption = parser.addVersionOption();
