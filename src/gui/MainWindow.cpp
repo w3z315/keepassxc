@@ -932,6 +932,10 @@ void MainWindow::setKioskMode(bool enabled)
         // Disable the "new entry" right-click context menu
         m_entryNewContextMenu->clear();
 
+        // Show passwords in kiosk mode (make them visible and copiable)
+        config()->set(Config::GUI_HidePasswords, false);
+        config()->set(Config::Security_HidePasswordPreviewPanel, false);
+
         updateWindowTitle();
     }
 }

@@ -268,6 +268,9 @@ void DatabaseOpenWidget::load(const QString& filename)
 
     // Set the public name if defined
     auto label = tr("Unlock KeePassXC Database");
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        label = tr("michler.io Passwort-Manager");
+    }
     if (!m_db->publicName().isEmpty()) {
         label.append(QString(": %1").arg(m_db->publicName()));
     }
@@ -302,10 +305,11 @@ void DatabaseOpenWidget::load(const QString& filename)
 
     // In kiosk mode, remove the close/cancel buttons to prevent dismissing the unlock dialog
     if (getMainWindow() && getMainWindow()->isKioskMode()) {
-        auto closeBtn = m_ui->buttonBox->button(QDialogButtonBox::Close);
-        if (closeBtn) {
-            m_ui->buttonBox->removeButton(closeBtn);
-            closeBtn->deleteLater();
+        m_ui->buttonBox->setStandardButtons(QDialogButtonBox::Ok);
+        auto okBtn = m_ui->buttonBox->button(QDialogButtonBox::Ok);
+        if (okBtn) {
+            okBtn->setText(tr("Unlock"));
+            okBtn->setDefault(true);
         }
         m_ui->resetQuickUnlockButton->setVisible(false);
     }
