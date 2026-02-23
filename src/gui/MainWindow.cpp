@@ -897,21 +897,34 @@ void MainWindow::setKioskMode(bool enabled)
 {
     m_kioskMode = enabled;
     if (m_kioskMode) {
-        // Hide menus and toolbar actions not relevant in kiosk mode
-        m_ui->menuEntries->setEnabled(false);
-        m_ui->menuGroups->setEnabled(false);
-        m_ui->actionDatabaseNew->setVisible(false);
-        m_ui->actionDatabaseSave->setVisible(false);
-        m_ui->actionDatabaseSaveAs->setVisible(false);
-        m_ui->actionDatabaseSaveBackup->setVisible(false);
-        m_ui->actionDatabaseMerge->setVisible(false);
-        m_ui->menuExport->setEnabled(false);
-        m_ui->menuRemoteSync->setEnabled(false);
-        m_ui->actionDatabaseSettings->setVisible(false);
-        m_ui->actionDatabaseSecurity->setVisible(false);
-        m_ui->actionEntryNew->setVisible(false);
-        m_ui->actionEntryEdit->setVisible(false);
-        m_ui->actionEntryDelete->setVisible(false);
+        // Hide entire menu bar
+        m_ui->menubar->setVisible(false);
+
+        // Hide all toolbar actions except the search widget
+        for (auto* action : m_ui->toolBar->actions()) {
+            if (action != m_searchWidgetAction) {
+                action->setVisible(false);
+            }
+        }
+
+        // Hide the toolbar separator
+        m_ui->toolbarSeparator->setVisible(false);
+
+        // Hide status bar
+        statusBar()->setVisible(false);
+
+        // Build a minimal right-click context menu (copy actions only)
+        m_entryContextMenu->clear();
+        m_entryContextMenu->addAction(m_ui->actionEntryCopyUsername);
+        m_entryContextMenu->addAction(m_ui->actionEntryCopyPassword);
+        m_entryContextMenu->addAction(m_ui->actionEntryCopyURL);
+        m_entryContextMenu->addAction(m_ui->menuEntryTotp->menuAction());
+        m_entryContextMenu->addSeparator();
+        m_entryContextMenu->addAction(m_ui->actionEntryOpenUrl);
+
+        // Disable the "new entry" right-click context menu
+        m_entryNewContextMenu->clear();
+
         updateWindowTitle();
     }
 }
@@ -1090,7 +1103,7 @@ void MainWindow::updateMenuActionState()
 
     m_searchWidgetAction->setEnabled(inDatabase);
 
-    // In kiosk mode, disable all modification actions
+    // In kiosk mode, disable all modification and management actions (keyboard shortcuts still work)
     if (m_kioskMode) {
         // Entry modifications
         m_ui->actionEntryNew->setEnabled(false);
@@ -1118,15 +1131,19 @@ void MainWindow::updateMenuActionState()
         m_ui->actionGroupEmptyRecycleBin->setEnabled(false);
         m_ui->actionGroupDownloadFavicons->setEnabled(false);
 
-        // Database modifications
+        // Database modifications and management
+        m_ui->actionDatabaseNew->setEnabled(false);
         m_ui->actionDatabaseSave->setEnabled(false);
         m_ui->actionDatabaseSaveAs->setEnabled(false);
         m_ui->actionDatabaseSaveBackup->setEnabled(false);
         m_ui->actionDatabaseSettings->setEnabled(false);
         m_ui->actionDatabaseSecurity->setEnabled(false);
         m_ui->actionDatabaseMerge->setEnabled(false);
+        m_ui->actionReports->setEnabled(false);
         m_ui->menuExport->setEnabled(false);
         m_ui->menuRemoteSync->setEnabled(false);
+        m_ui->actionSettings->setEnabled(false);
+        m_ui->actionPasswordGenerator->setEnabled(false);
     }
 }
 
@@ -1577,16 +1594,20 @@ bool MainWindow::focusNextPrevChild(bool next)
 void MainWindow::focusSearchWidget()
 {
     if (m_searchWidgetAction->isEnabled()) {
-        m_ui->toolBar->setVisible(true);
-        m_ui->toolBar->setExpanded(true);
+        if (!m_kioskMode) {
+            m_ui->toolBar->setVisible(true);
+            m_ui->toolBar->setExpanded(true);
+        }
         m_searchWidget->focusSearch();
     }
 }
 
 void MainWindow::enableMenuAndToolbar()
 {
-    m_ui->toolBar->setDisabled(false);
-    m_ui->menubar->setDisabled(false);
+    if (!m_kioskMode) {
+        m_ui->toolBar->setDisabled(false);
+        m_ui->menubar->setDisabled(false);
+    }
 }
 
 void MainWindow::disableMenuAndToolbar()
@@ -1749,14 +1770,16 @@ void MainWindow::showEntryContextMenu(const QPoint& globalPos)
 
     if (entrySelected) {
         m_entryContextMenu->popup(globalPos);
-    } else {
+    } else if (!m_kioskMode) {
         m_entryNewContextMenu->popup(globalPos);
     }
 }
 
 void MainWindow::showGroupContextMenu(const QPoint& globalPos)
 {
-    m_ui->menuGroups->popup(globalPos);
+    if (!m_kioskMode) {
+        m_ui->menuGroups->popup(globalPos);
+    }
 }
 
 void MainWindow::applySettingsChanges()
