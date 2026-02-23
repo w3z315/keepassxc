@@ -161,6 +161,11 @@ void DatabaseOpenWidget::toggleHardwareKeyComponent(bool state)
 }
 void DatabaseOpenWidget::closeDatabase()
 {
+    // Prevent closing in kiosk mode
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        return;
+    }
+
     int closeWarningInterval = 3000;
 
     if (!m_triedToQuit && window() == getMainWindow()) {
@@ -294,6 +299,15 @@ void DatabaseOpenWidget::load(const QString& filename)
     }
 
     toggleQuickUnlockScreen();
+
+    // In kiosk mode, hide the close/cancel buttons to prevent dismissing the unlock dialog
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        auto closeBtn = m_ui->buttonBox->button(QDialogButtonBox::Close);
+        if (closeBtn) {
+            closeBtn->setVisible(false);
+        }
+        m_ui->resetQuickUnlockButton->setVisible(false);
+    }
 
 #ifdef WITH_XC_YUBIKEY
     // Do initial auto-poll

@@ -20,7 +20,9 @@
 #include "DatabaseOpenWidget.h"
 #include "DatabaseTabWidget.h"
 #include "DatabaseWidget.h"
+#include "MainWindow.h"
 
+#include <QCloseEvent>
 #include <QFileInfo>
 #include <QLayout>
 #include <QShortcut>
@@ -237,6 +239,12 @@ void DatabaseOpenDialog::complete(bool accepted)
 
 void DatabaseOpenDialog::closeEvent(QCloseEvent* e)
 {
+    // Prevent closing in kiosk mode
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        e->ignore();
+        return;
+    }
+
     emit dialogFinished(false, m_currentDbWidget);
     clearForms();
     QDialog::closeEvent(e);
