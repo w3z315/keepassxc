@@ -300,11 +300,12 @@ void DatabaseOpenWidget::load(const QString& filename)
 
     toggleQuickUnlockScreen();
 
-    // In kiosk mode, hide the close/cancel buttons to prevent dismissing the unlock dialog
+    // In kiosk mode, remove the close/cancel buttons to prevent dismissing the unlock dialog
     if (getMainWindow() && getMainWindow()->isKioskMode()) {
         auto closeBtn = m_ui->buttonBox->button(QDialogButtonBox::Close);
         if (closeBtn) {
-            closeBtn->setVisible(false);
+            m_ui->buttonBox->removeButton(closeBtn);
+            closeBtn->deleteLater();
         }
         m_ui->resetQuickUnlockButton->setVisible(false);
     }
@@ -527,6 +528,10 @@ QSharedPointer<CompositeKey> DatabaseOpenWidget::buildDatabaseKey()
 
 void DatabaseOpenWidget::reject()
 {
+    // Prevent rejecting/closing in kiosk mode
+    if (getMainWindow() && getMainWindow()->isKioskMode()) {
+        return;
+    }
     emit dialogFinished(false);
 }
 
