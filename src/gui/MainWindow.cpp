@@ -1106,7 +1106,8 @@ void MainWindow::updateMenuActionState()
 
     m_searchWidgetAction->setEnabled(inDatabase);
 
-    // In kiosk mode, disable all modification and management actions (keyboard shortcuts still work)
+    // In kiosk mode, disable all modification and management actions
+    // This also disables their keyboard shortcuts to prevent bypassing the UI restrictions
     if (m_kioskMode) {
         // Entry modifications
         m_ui->actionEntryNew->setEnabled(false);
